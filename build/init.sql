@@ -6,7 +6,7 @@ CREATE TABLE users(
     nickname citext COLLATE ucs_basic UNIQUE PRIMARY KEY,
     about text NOT NULL DEFAULT ''
 );
-CREATE INDEX users_email ON users(email);
+CREATE INDEX users_email ON users(nickname, email);
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
@@ -16,7 +16,7 @@ CREATE UNLOGGED TABLE forums (
     threads int DEFAULT 0
 );
 
---CREATE INDEX forums_users ON forums(author); --замедлило вставку постов
+CREATE INDEX forums_users ON forums(author); --замедлило вставку постов
 CREATE UNLOGGED TABLE forum_users (
     nickname citext references users(nickname),
     forum citext references forums(slug),
@@ -53,8 +53,12 @@ CREATE UNLOGGED TABLE posts (
     path  INTEGER[]
 );
 
-CREATE INDEX IF NOT EXISTS posts_pathtopost_thread_index ON posts(thread, path);
+
+CREATE INDEX pdesc ON posts(thread, path DESC);
+CREATE INDEX pdesc ON posts(thread, path ASC);
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
+CREATE INDEX ptidd ON posts(thread, id DESC);
+CREATE INDEX ptida ON posts(thread, id ASC);
 
 CREATE UNLOGGED TABLE votes (
     author citext references users(nickname),
