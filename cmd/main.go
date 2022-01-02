@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-	conn := "postgres://postgres:password@127.0.0.1:5432/db3"
-	//conn := "postgres://docker:docker@127.0.0.1:5432/docker?pool_max_conns=10"
+	//conn := "postgres://postgres:password@127.0.0.1:5432/db3"
+	conn := "postgres://docker:docker@127.0.0.1:5432/docker?pool_max_conns=1000"
 
 	pool, err := pgxpool.Connect(context.Background(), conn)
 	if err != nil {

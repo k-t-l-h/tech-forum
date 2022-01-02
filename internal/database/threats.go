@@ -99,7 +99,7 @@ func (r *Repo) GetThreadBySlugOrId(check string, thread models.Thread) (models.T
 		thread.Slug = check
 		query := `SELECT id, author, message, title, created_at, forum, slug, votes
 					FROM threads
-					WHERE lower(slug) = lower($1)`
+					WHERE slug = $1`
 		row = r.db.QueryRow(context.Background(), query, thread.Slug)
 
 	} else {
@@ -173,12 +173,12 @@ func (r *Repo) ThreadVote(check string, vote models.Vote) (models.Thread, int) {
 		return thread, models.NotFound
 	}
 
-	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING *`
+	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING vote`
 	row := r.db.QueryRow(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
 
 	value := 0
 
-	err := row.Scan(&vote.NickName, &vote.Voice, &thread.Id)
+	err := row.Scan(&vote.Voice)
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {
 			switch pqError.Code {
@@ -205,7 +205,7 @@ func (r *Repo) ThreadVote(check string, vote models.Vote) (models.Thread, int) {
 
 // /thread/{slug_or_id}/details
 func (r *Repo) ThreadUpdate(check string, thread models.Thread) (models.Thread, int) {
-	t, status := r.GetThreadBySlugOrId(check, thread)
+	t, status := r.GetThreadBySlug(check, thread)
 	if status == models.NotFound {
 		return thread, models.NotFound
 	}
@@ -244,12 +244,12 @@ func (r *Repo) ThreadVoteID(check int, vote models.Vote) (models.Thread, int) {
 
 	thread, _ := r.GetThreadByID(check, models.Thread{})
 
-	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING *, (xmax::text::int > 0)  as existed`
+	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING vote`
 	row := r.db.QueryRow(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
 
 	value := 0
 
-	err := row.Scan(&vote.NickName, &vote.Voice, &thread.Id, &vote.Existed)
+	err := row.Scan(&vote.Voice)
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {
 			switch pqError.Code {
@@ -357,13 +357,14 @@ func (r *Repo) CreateThreadPostID(id int, posts []models.Post) ([]models.Post, i
 func (r *Repo) GetThreadByID(id int, thread models.Thread) (models.Thread, int) {
 	var row v4.Row
 
-	query := `SELECT id, author, message, title, created_at, forum, slug, votes
+	query := `SELECT author, message, title, created_at, forum, slug, votes
 					FROM threads
 					WHERE id = $1`
 	row = r.db.QueryRow(context.Background(), query, id)
 
-	err := row.Scan(&thread.Id, &thread.Author, &thread.Message, &thread.Title,
+	err := row.Scan(&thread.Author, &thread.Message, &thread.Title,
 		&thread.CreatedAt, &thread.Forum, &thread.Slug, &thread.Votes)
+	thread.Id = id
 
 	if err != nil {
 		return thread, models.NotFound
@@ -457,7 +458,7 @@ func (r *Repo) GetThreadsPostsID(limit, since, desc, sort string, id int) (model
 func (r *Repo) GetSlugID(check string, thread models.Thread) (models.Thread, int) {
 	var row v4.Row
 
-	query := `SELECT id FROM threads WHERE lower(slug) = lower($1)`
+	query := `SELECT id FROM threads WHERE slug = $1`
 	row = r.db.QueryRow(context.Background(), query, check)
 
 	err := row.Scan(&thread.Id)

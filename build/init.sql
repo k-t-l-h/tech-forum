@@ -6,6 +6,7 @@ CREATE TABLE users(
     nickname citext COLLATE ucs_basic UNIQUE PRIMARY KEY,
     about text NOT NULL DEFAULT ''
 );
+CREATE INDEX users_email ON users(email);
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
@@ -15,14 +16,14 @@ CREATE UNLOGGED TABLE forums (
     threads int DEFAULT 0
 );
 
+--CREATE INDEX forums_users ON forums(author); --замедлило вставку постов
 CREATE UNLOGGED TABLE forum_users (
     nickname citext references users(nickname),
     forum citext references forums(slug),
     CONSTRAINT fk UNIQUE(nickname, forum)
 );
 
-CREATE INDEX fu_nick ON forum_users(nickname);
-CREATE INDEX fu_for ON forum_users(forum);
+CREATE INDEX fu_nick ON forum_users(nickname,forum);
 
 CREATE UNLOGGED TABLE threads (
     id serial PRIMARY KEY,
@@ -34,7 +35,10 @@ CREATE UNLOGGED TABLE threads (
     slug citext,
     votes int
 );
-CREATE INDEX ON threads(id, forum);
+
+CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum);
+CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
+CREATE INDEX ON threads(id, forum); --ускоряет
 CREATE INDEX ON threads(slug, id, forum);
 
 CREATE UNLOGGED TABLE posts (
@@ -48,6 +52,9 @@ CREATE UNLOGGED TABLE posts (
     thread int references threads(id),
     path  INTEGER[]
 );
+
+CREATE INDEX IF NOT EXISTS posts_pathtopost_thread_index ON posts(thread, path);
+CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
 
 CREATE UNLOGGED TABLE votes (
     author citext references users(nickname),
@@ -84,9 +91,3 @@ CREATE TRIGGER path_update_trigger
     ON posts
     FOR EACH ROW
     EXECUTE PROCEDURE update_path();
-
-CREATE INDEX parent_tree_index
-    ON posts ((path[1]), path DESC, id);
-
-CREATE INDEX parent_tree_index2
-    ON posts (id, (path[1]));
