@@ -100,11 +100,9 @@ func (r *Repo) UpdateUser(user models.User) (models.User, int) {
 
 	query := `UPDATE users 
 	SET fullname=$1, email=$2, about=$3 
-	WHERE nickname = $4 
-	RETURNING fullname, about, email;`
+	WHERE nickname = $4`
 
-	rows := r.db.QueryRow(context.Background(), query, us.FullName, us.Email, us.About, us.NickName)
-	err := rows.Scan(&us.FullName, &us.About, &us.Email)
+	_, err := r.db.Exec(context.Background(), query, us.FullName, us.Email, us.About, us.NickName)
 
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {
