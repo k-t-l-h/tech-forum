@@ -221,13 +221,12 @@ func (r *Repo) ThreadUpdate(check string, thread models.Thread) (models.Thread, 
 	query := `UPDATE threads
 	SET message=$1, title=$2
 	WHERE id = $3
-	RETURNING id, author, message, title, created_at, forum, slug, votes`
+	RETURNING author, created_at, forum, slug, votes`
 
 	row := r.db.QueryRow(context.Background(), query, t.Message, t.Title, t.Id)
 	res := models.Thread{}
 
-	err := row.Scan(&res.Id, &res.Author, &res.Message, &res.Title,
-		&res.CreatedAt, &res.Forum, &res.Slug, &res.Votes)
+	err := row.Scan(&res.Author,&res.CreatedAt, &res.Forum, &res.Slug, &res.Votes)
 	if err == nil {
 	}
 
@@ -378,12 +377,12 @@ func (r *Repo) ThreadUpdateID(id int, thread models.Thread) (models.Thread, int)
 	t := models.Thread{}
 	var row v4.Row
 
-	query := `SELECT id, author, message, title, created_at, forum, slug, votes
+	query := `SELECT author, message, title, created_at, forum, slug, votes
 					FROM threads
 					WHERE id = $1`
 	row = r.db.QueryRow(context.Background(), query, id)
 
-	err := row.Scan(&t.Id, &t.Author, &t.Message, &t.Title,
+	err := row.Scan(&t.Author, &t.Message, &t.Title,
 		&t.CreatedAt, &t.Forum, &t.Slug, &t.Votes)
 
 	if err != nil {

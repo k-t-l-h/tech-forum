@@ -28,15 +28,12 @@ func (r *Repo) CreateForum(forum models.Forum) (models.Forum, int) {
 	forum.User = user.NickName
 	//уменьшаем количество записей
 	query := `INSERT INTO forums (title, author, slug) 
-	VALUES ($1, $2, $3) 
-	RETURNING slug;`
+	VALUES ($1, $2, $3);`
 
 	//уменьшаем количество выделений памяти
 	var results models.Forum
-	res := forum
-	row := r.db.QueryRow(context.Background(),
+	_, err := r.db.Exec(context.Background(),
 		query, forum.Title, forum.User, forum.Slug)
-	err := row.Scan(&res.Slug)
 
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {

@@ -6,7 +6,9 @@ CREATE TABLE users(
     nickname citext COLLATE ucs_basic UNIQUE PRIMARY KEY,
     about text NOT NULL DEFAULT ''
 );
-CREATE INDEX users_email ON users(nickname, email);
+--CLUSTER users;
+CREATE INDEX users_email ON users(email); --ускорили вставку постов
+CREATE INDEX users_email ON users(email, nickname);  --ускорили вставку постов
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
@@ -15,15 +17,16 @@ CREATE UNLOGGED TABLE forums (
     posts int DEFAULT 0,
     threads int DEFAULT 0
 );
+CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
 
-CREATE INDEX forums_users ON forums(author); --замедлило вставку постов
 CREATE UNLOGGED TABLE forum_users (
     nickname citext references users(nickname),
     forum citext references forums(slug),
     CONSTRAINT fk UNIQUE(nickname, forum)
 );
-
-CREATE INDEX fu_nick ON forum_users(nickname,forum);
+CREATE INDEX fu_nickname ON forum_users(nickname);
+CREATE INDEX fu_forum ON forum_users(forum);
+CREATE INDEX fu_full ON forum_users(nickname,forum);
 
 CREATE UNLOGGED TABLE threads (
     id serial PRIMARY KEY,
@@ -35,11 +38,12 @@ CREATE UNLOGGED TABLE threads (
     slug citext,
     votes int
 );
-
-CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum);
+CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum); --не убирать
 CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
-CREATE INDEX ON threads(id, forum); --ускоряет
+--CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
 CREATE INDEX ON threads(slug, id, forum);
+
+--Cluster threads USING cluster_thread;
 
 CREATE UNLOGGED TABLE posts (
     id serial PRIMARY KEY ,
@@ -57,8 +61,14 @@ CREATE UNLOGGED TABLE posts (
 CREATE INDEX pdesc ON posts(thread, path DESC);
 CREATE INDEX pdesc ON posts(thread, path ASC);
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
-CREATE INDEX ptidd ON posts(thread, id DESC);
+--CREATE INDEX ptidd ON posts(thread, id DESC);
 CREATE INDEX ptida ON posts(thread, id ASC);
+CREATE INDEX ptida2 ON posts(path, id DESC);
+CREATE INDEX parent_tree_index
+    ON posts ((path[1]), path DESC, id);
+
+CREATE INDEX parent_tree_index2
+    ON posts (id, (path[1]));
 
 CREATE UNLOGGED TABLE votes (
     author citext references users(nickname),
@@ -67,6 +77,7 @@ CREATE UNLOGGED TABLE votes (
     CONSTRAINT checks UNIQUE(author, thread)
 );
 
+CREATE INDEX votes_full ON votes(author, vote, thread);
 
 CREATE OR REPLACE FUNCTION update_path() RETURNS TRIGGER AS
 $update_path$
@@ -74,17 +85,8 @@ DECLARE
 parent_path  INTEGER[];
     parent_thread int;
 BEGIN
-    IF (NEW.parent = 0) THEN
-        NEW.path := array_append(new.path, new.id);
-ELSE
-SELECT thread FROM posts WHERE id = new.parent INTO parent_thread;
-IF NOT FOUND OR parent_thread != NEW.thread THEN
-            RAISE EXCEPTION 'this is an exception' USING ERRCODE = '22000';
-end if;
-
 SELECT path FROM posts WHERE id = new.parent INTO parent_path;
 NEW.path := parent_path || new.id;
-END IF;
 RETURN new;
 END
 $update_path$ LANGUAGE plpgsql;
