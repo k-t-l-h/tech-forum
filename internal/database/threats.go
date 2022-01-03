@@ -149,7 +149,8 @@ func (r *Repo) GetThreadsPosts(limit, since, desc, sort, check string) (models.P
 
 		pr := models.Post{}
 		times := time.Time{}
-		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent, &pr.Thread)
+		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent)
+		pr.Thread = thread.Id
 		pr.CreatedAt = times.Format(time.RFC3339)
 		if err != nil {
 		}
@@ -229,7 +230,9 @@ func (r *Repo) ThreadUpdate(check string, thread models.Thread) (models.Thread, 
 	err := row.Scan(&res.Author,&res.CreatedAt, &res.Forum, &res.Slug, &res.Votes)
 	if err == nil {
 	}
-
+	res.Message = t.Message
+	res.Title = t.Title
+	res.Id = t.Id
 	return res, models.OK
 }
 
@@ -384,6 +387,7 @@ func (r *Repo) ThreadUpdateID(id int, thread models.Thread) (models.Thread, int)
 
 	err := row.Scan(&t.Author, &t.Message, &t.Title,
 		&t.CreatedAt, &t.Forum, &t.Slug, &t.Votes)
+	t.Id = id
 
 	if err != nil {
 		return thread, models.NotFound
@@ -405,7 +409,6 @@ func (r *Repo) ThreadUpdateID(id int, thread models.Thread) (models.Thread, int)
 
 	if err == nil {
 	}
-
 	return t, models.OK
 }
 
@@ -444,7 +447,8 @@ func (r *Repo) GetThreadsPostsID(limit, since, desc, sort string, id int) (model
 		pr := models.Post{}
 		times := time.Time{}
 
-		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent, &pr.Thread)
+		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent)
+		pr.Thread = thread.Id
 		pr.CreatedAt = times.Format(time.RFC3339)
 		if err != nil {
 		}

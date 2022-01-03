@@ -59,7 +59,7 @@ func (r *Repo) UpdatePost(update models.PostUpdate) (models.Post, int) {
 
 	res := models.Post{}
 	//проверить наличие поста
-	query := `SELECT id, author, post, created_at,
+	query := `SELECT author, post, created_at,
                        forum, isEdited, parent, thread
 				FROM posts 
 				WHERE id = $1 `
@@ -67,8 +67,9 @@ func (r *Repo) UpdatePost(update models.PostUpdate) (models.Post, int) {
 	row := r.db.QueryRow(context.Background(), query, update.Id)
 
 	times := time.Time{}
-	err := row.Scan(&res.Id, &res.Author, &res.Message, &times,
+	err := row.Scan(&res.Author, &res.Message, &times,
 		&res.Forum, &res.IsEdited, &res.Parent, &res.Thread)
+	res.Id = update.Id
 	res.CreatedAt = times.Format(time.RFC3339)
 	//поста нет
 	if err != nil {
@@ -95,7 +96,7 @@ func (r *Repo) UpdatePost(update models.PostUpdate) (models.Post, int) {
 func (r *Repo) getFlat(id int, since, limit, desc string) pgx.Rows {
 	var rows pgx.Rows
 
-	query := `SELECT id, author, post, created_at, forum, isedited, parent, thread
+	query := `SELECT id, author, post, created_at, forum, isedited, parent
 				FROM posts
 				WHERE thread = $1`
 
@@ -146,11 +147,11 @@ func (r *Repo) getTree(id int, since, limit, desc string) pgx.Rows {
 
 	if limit == "" && since == "" {
 		if desc == "true" {
-			query = `SELECT id, author, post, created_at, forum, isedited, parent, thread
+			query = `SELECT id, author, post, created_at, forum, isedited, parent 
 				FROM posts
 				WHERE thread = $1 ORDER BY path, id DESC`
 		} else {
-			query = ` SELECT id, author, post, created_at, forum, isedited, parent, thread
+			query = ` SELECT id, author, post, created_at, forum, isedited, parent
 				FROM posts
 				WHERE thread = $1 ORDER BY path, id ASC`
 		}
@@ -158,11 +159,11 @@ func (r *Repo) getTree(id int, since, limit, desc string) pgx.Rows {
 	} else {
 		if limit != "" && since == "" {
 			if desc == "true" {
-				query += `SELECT id, author, post, created_at, forum, isedited, parent, thread
+				query += `SELECT id, author, post, created_at, forum, isedited, parent
 				FROM posts
 				WHERE thread = $1 ORDER BY path DESC, id DESC LIMIT $2`
 			} else {
-				query += `SELECT id, author, post, created_at, forum, isedited, parent, thread
+				query += `SELECT id, author, post, created_at, forum, isedited, parent
 				FROM posts
 				WHERE thread = $1 ORDER BY path, id ASC LIMIT $2`
 			}
@@ -172,12 +173,12 @@ func (r *Repo) getTree(id int, since, limit, desc string) pgx.Rows {
 		if limit != "" && since != "" {
 			if desc == "true" {
 				query = `SELECT posts.id, posts.author, posts.post, 
-				posts.created_at, posts.forum, posts.isedited, posts.parent, posts.thread
+				posts.created_at, posts.forum, posts.isedited, posts.parent
 				FROM posts JOIN posts parent ON parent.id = $2 WHERE posts.path < parent.path AND  posts.thread = $1
 				ORDER BY posts.path DESC, posts.id DESC LIMIT $3`
 			} else {
 				query = `SELECT posts.id, posts.author, posts.post, 
-				posts.created_at, posts.forum, posts.isedited, posts.parent, posts.thread
+				posts.created_at, posts.forum, posts.isedited, posts.parent
 				FROM posts JOIN posts parent ON parent.id = $2 WHERE posts.path > parent.path AND  posts.thread = $1
 				ORDER BY posts.path ASC, posts.id ASC LIMIT $3`
 			}
@@ -187,12 +188,12 @@ func (r *Repo) getTree(id int, since, limit, desc string) pgx.Rows {
 		if limit == "" && since != "" {
 			if desc == "true" {
 				query = `SELECT posts.id, posts.author, posts.post, 
-				posts.created_at, posts.forum, posts.isedited, posts.parent, posts.thread
+				posts.created_at, posts.forum, posts.isedited, posts.parent
 				FROM posts JOIN posts parent ON parent.id = $2 WHERE posts.path < parent.path AND  posts.thread = $1
 				ORDER BY posts.path DESC, posts.id DESC`
 			} else {
 				query = `SELECT posts.id, posts.author, posts.post, 
-				posts.created_at, posts.forum, posts.isedited, posts.parent, posts.thread
+				posts.created_at, posts.forum, posts.isedited, posts.parent
 				FROM posts JOIN posts parent ON parent.id = $2 WHERE posts.path > parent.path AND  posts.thread = $1
 				ORDER BY posts.path ASC, posts.id ASC`
 			}
@@ -228,7 +229,7 @@ func (r *Repo) getParentTree(id int, since, limit, desc string) pgx.Rows {
 	}
 
 	query := fmt.Sprintf(
-		`SELECT id, author, post, created_at, forum, isedited, parent, thread FROM posts WHERE path[1] = ANY (%s) `, parents)
+		`SELECT id, author, post, created_at, forum, isedited, parent FROM posts WHERE path[1] = ANY (%s) `, parents)
 
 	if desc == "true" {
 		query += ` ORDER BY path[1] DESC, path,  id `
