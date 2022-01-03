@@ -43,8 +43,6 @@ CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
 CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
 CREATE INDEX ON threads(slug, id, forum);
 
---Cluster threads USING cluster_thread;
-
 CREATE UNLOGGED TABLE posts (
     id serial PRIMARY KEY ,
     author citext references users(nickname),
@@ -57,7 +55,7 @@ CREATE UNLOGGED TABLE posts (
     path  INTEGER[]
 );
 
-
+CREATE INDEX IF NOT EXISTS posts_thread ON posts(thread); --не убирать
 CREATE INDEX pdesc ON posts(thread, path DESC);
 CREATE INDEX pasc ON posts(thread, path ASC);
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
@@ -68,7 +66,8 @@ CREATE INDEX parent_tree_index
 CREATE INDEX parent_tree_index2
     ON posts ((path[1]), path ASC, id);
 CREATE INDEX parent_tree_index3
-    ON posts (id, (path[1]));
+    ON posts (id, (path[1]) ASC);
+CREATE INDEX parent_tree_index4 ON posts (id, (path[1]) DESC);
 
 CREATE UNLOGGED TABLE votes (
     author citext references users(nickname),
@@ -76,7 +75,6 @@ CREATE UNLOGGED TABLE votes (
     thread int references threads(id),
     CONSTRAINT checks UNIQUE(author, thread)
 );
-
 CREATE INDEX votes_full ON votes(author, vote, thread);
 
 CREATE OR REPLACE FUNCTION update_path() RETURNS TRIGGER AS
