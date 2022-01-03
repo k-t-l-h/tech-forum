@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx"
 	v4 "github.com/jackc/pgx/v4"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -54,7 +53,8 @@ func (r *Repo) CreateThreadPost(check string, posts []models.Post) ([]models.Pos
 			}
 		}
 
-		err = tx.QueryRow(context.Background(), ins.Name, p.Author, p.Message, times, thread.Forum, false, p.Parent, thread.Id, []int{}).Scan(&p.Id)
+		err = tx.QueryRow(context.Background(), ins.Name, p.Author,
+			p.Message, times, thread.Forum, false, p.Parent, thread.Id, []int{}).Scan(&p.Id)
 
 		p.CreatedAt = times.Format(time.RFC3339)
 
@@ -92,41 +92,19 @@ func (r *Repo) CreateThreadPost(check string, posts []models.Post) ([]models.Pos
 	return result, models.OK
 }
 
-func (r *Repo) GetThreadBySlugOrId(check string, thread models.Thread) (models.Thread, int) {
-	var row v4.Row
-
-	if value, err := strconv.Atoi(check); err != nil {
-		thread.Slug = check
-		query := `SELECT id, author, message, title, created_at, forum, slug, votes
-					FROM threads
-					WHERE slug = $1`
-		row = r.db.QueryRow(context.Background(), query, thread.Slug)
-
-	} else {
-		query := `SELECT id, author, message, title, created_at, forum, slug, votes
-					FROM threads
-					WHERE id = $1`
-		row = r.db.QueryRow(context.Background(), query, value)
-	}
-
-	err := row.Scan(&thread.Id, &thread.Author, &thread.Message, &thread.Title,
-		&thread.CreatedAt, &thread.Forum, &thread.Slug, &thread.Votes)
-
-	if err != nil {
-		return thread, models.NotFound
-	}
-
-	return thread, models.OK
-}
-
 // thread/{slug_or_id}/posts
 func (r *Repo) GetThreadsPosts(limit, since, desc, sort, check string) (models.Posts, int) {
 
 	var row v4.Rows
 	ps := models.Posts{}
-	//TODO: получить только id
-	thread, status := r.GetThreadBySlug(check, models.Thread{})
-	if status == models.NotFound {
+
+	thread := models.Thread{}
+	query := `SELECT id, forum FROM threads WHERE slug = $1`
+	rows := r.db.QueryRow(context.Background(), query, check)
+
+	err := rows.Scan(&thread.Id, &thread.Forum)
+
+	if err != nil {
 		return ps, models.NotFound
 	}
 
@@ -149,10 +127,12 @@ func (r *Repo) GetThreadsPosts(limit, since, desc, sort, check string) (models.P
 
 		pr := models.Post{}
 		times := time.Time{}
-		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent)
+		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.IsEdited, &pr.Parent)
 		pr.Thread = thread.Id
 		pr.CreatedAt = times.Format(time.RFC3339)
+		pr.Forum = thread.Forum
 		if err != nil {
+			log.Print(err)
 		}
 		ps = append(ps, pr)
 	}
@@ -227,7 +207,7 @@ func (r *Repo) ThreadUpdate(check string, thread models.Thread) (models.Thread, 
 	row := r.db.QueryRow(context.Background(), query, t.Message, t.Title, t.Id)
 	res := models.Thread{}
 
-	err := row.Scan(&res.Author,&res.CreatedAt, &res.Forum, &res.Slug, &res.Votes)
+	err := row.Scan(&res.Author, &res.CreatedAt, &res.Forum, &res.Slug, &res.Votes)
 	if err == nil {
 	}
 	res.Message = t.Message
@@ -418,10 +398,10 @@ func (r *Repo) GetThreadsPostsID(limit, since, desc, sort string, id int) (model
 	ps := models.Posts{}
 	thread := models.Thread{}
 
-	query := `SELECT id	FROM threads WHERE id = $1`
+	query := `SELECT id,forum FROM threads WHERE id = $1`
 	rows := r.db.QueryRow(context.Background(), query, id)
 
-	err := rows.Scan(&thread.Id)
+	err := rows.Scan(&thread.Id, &thread.Forum)
 
 	if err != nil {
 		return ps, models.NotFound
@@ -447,10 +427,12 @@ func (r *Repo) GetThreadsPostsID(limit, since, desc, sort string, id int) (model
 		pr := models.Post{}
 		times := time.Time{}
 
-		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.Forum, &pr.IsEdited, &pr.Parent)
+		err := row.Scan(&pr.Id, &pr.Author, &pr.Message, &times, &pr.IsEdited, &pr.Parent)
 		pr.Thread = thread.Id
 		pr.CreatedAt = times.Format(time.RFC3339)
+		pr.Forum = thread.Forum
 		if err != nil {
+			log.Print(err)
 		}
 		ps = append(ps, pr)
 	}

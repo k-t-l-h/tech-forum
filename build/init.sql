@@ -6,7 +6,7 @@ CREATE TABLE users(
     nickname citext COLLATE ucs_basic UNIQUE PRIMARY KEY,
     about text NOT NULL DEFAULT ''
 );
---CLUSTER users;
+--оставить оба.
 CREATE INDEX users_email ON users(email); --ускорили вставку постов
 CREATE INDEX users_email ON users(email, nickname);  --ускорили вставку постов
 
@@ -59,7 +59,7 @@ CREATE UNLOGGED TABLE posts (
 
 
 CREATE INDEX pdesc ON posts(thread, path DESC);
-CREATE INDEX pdesc ON posts(thread, path ASC);
+CREATE INDEX pasc ON posts(thread, path ASC);
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
 CREATE INDEX ptida ON posts(thread, id ASC);
 

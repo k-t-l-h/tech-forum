@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgconn"
 	v4 "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"log"
 )
 
 type Repo struct {
@@ -96,7 +95,6 @@ func (r *Repo) CreateSlug(thread models.Thread) (models.Thread, int) {
 			case "23503":
 				return models.Thread{}, models.UserNotFound
 			default:
-				log.Print(pqError.Code)
 				return models.Thread{}, models.UserNotFound
 			}
 		}
@@ -104,16 +102,10 @@ func (r *Repo) CreateSlug(thread models.Thread) (models.Thread, int) {
 	r.info.Thread++
 	query2 := `INSERT INTO forum_users(nickname,
     forum) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
-	_, err = r.db.Exec(context.Background(), query2, thread.Author, thread.Forum)
-	if err != nil {
-		log.Fatal(err)
-	}
+	_, _ = r.db.Exec(context.Background(), query2, thread.Author, thread.Forum)
 
 	query3 := `UPDATE forums SET threads = threads + 1 WHERE slug =$1`
-	_, err = r.db.Exec(context.Background(), query3, thread.Forum)
-	if err != nil {
-		log.Fatal(err)
-	}
+	_, _ = r.db.Exec(context.Background(), query3, thread.Forum)
 	return t, models.OK
 }
 
@@ -244,9 +236,9 @@ func (r *Repo) GetForumUsers(forum models.Forum, limit, since, desc string) ([]m
 		}
 
 		row, err = r.db.Query(context.Background(), query, forum.Slug, since, limit)
-		log.Print(err)
 	}
 
+	if err != nil{}
 	defer row.Close()
 
 	for row.Next() {
@@ -261,6 +253,13 @@ func (r *Repo) GetForumUsers(forum models.Forum, limit, since, desc string) ([]m
 func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]models.Thread, int) {
 
 	th := []models.Thread{}
+
+	f := models.Forum{Slug: t.Forum}
+	f, code := r.ForumCheck(f)
+	if code != models.OK {
+		return th, models.NotFound
+	}
+
 	var row v4.Rows
 	var err error
 
@@ -268,13 +267,13 @@ func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]mo
 
 	if limit == "" && since == "" {
 		if desc == "" || desc == "false" {
-			query = `SELECT id, slug, author, created_at, forum, title, message, votes
+			query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1
 						ORDER BY created_at ASC`
 
 		} else {
-			query = `SELECT id, slug, author, created_at, forum, title, message, votes
+			query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1
 						ORDER BY created_at DESC`
@@ -284,13 +283,13 @@ func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]mo
 
 		if limit != "" && since == "" {
 			if desc == "" || desc == "false" {
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1
 						ORDER BY created_at ASC  LIMIT $2`
 
 			} else {
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1
 						ORDER BY created_at DESC  LIMIT $2`
@@ -301,12 +300,12 @@ func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]mo
 
 		if since != "" && limit == "" {
 			if desc == "" || desc == "false" {
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1 AND created_at >= $2
 						ORDER BY created_at ASC `
 			} else {
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at,  title, message, votes
 						FROM threads
 						WHERE forum = $1 AND created_at <= $2
 						ORDER BY created_at DESC `
@@ -319,12 +318,12 @@ func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]mo
 
 			if desc == "" || desc == "false" {
 
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1 AND created_at >= $2
 						ORDER BY created_at ASC LIMIT $3`
 			} else {
-				query = `SELECT id, slug, author, created_at, forum, title, message, votes
+				query = `SELECT id, slug, author, created_at, title, message, votes
 						FROM threads
 						WHERE forum = $1 AND created_at <= $2
 						ORDER BY created_at DESC LIMIT $3`
@@ -335,7 +334,8 @@ func (r *Repo) GetForumThreads(t models.Thread, limit, since, desc string) ([]mo
 	defer row.Close()
 	for row.Next() {
 		t := models.Thread{}
-		err = row.Scan(&t.Id, &t.Slug, &t.Author, &t.CreatedAt, &t.Forum, &t.Title, &t.Message, &t.Votes)
+		t.Forum = f.Slug
+		err = row.Scan(&t.Id, &t.Slug, &t.Author, &t.CreatedAt, &t.Title, &t.Message, &t.Votes)
 
 		th = append(th, t)
 	}
