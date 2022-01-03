@@ -154,12 +154,9 @@ func (r *Repo) ThreadVote(check string, vote models.Vote) (models.Thread, int) {
 		return thread, models.NotFound
 	}
 
-	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING vote`
-	row := r.db.QueryRow(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
-
+	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3)`
 	value := 0
-
-	err := row.Scan(&vote.Voice)
+	_, err := r.db.Exec(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {
 			switch pqError.Code {
@@ -226,12 +223,9 @@ func (r *Repo) ThreadVoteID(check int, vote models.Vote) (models.Thread, int) {
 
 	thread, _ := r.GetThreadByID(check, models.Thread{})
 
-	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3) RETURNING vote`
-	row := r.db.QueryRow(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
-
+	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3)`
 	value := 0
-
-	err := row.Scan(&vote.Voice)
+	_, err := r.db.Exec(context.Background(), query, vote.NickName, vote.Voice, thread.Id)
 	if err != nil {
 		if pqError, ok := err.(*pgconn.PgError); ok {
 			switch pqError.Code {
