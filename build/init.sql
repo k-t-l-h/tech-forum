@@ -40,7 +40,7 @@ CREATE UNLOGGED TABLE threads (
 );
 CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum); --не убирать
 CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
---CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
+CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
 CREATE INDEX ON threads(slug, id, forum);
 
 --Cluster threads USING cluster_thread;
@@ -61,13 +61,13 @@ CREATE UNLOGGED TABLE posts (
 CREATE INDEX pdesc ON posts(thread, path DESC);
 CREATE INDEX pdesc ON posts(thread, path ASC);
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
---CREATE INDEX ptidd ON posts(thread, id DESC);
 CREATE INDEX ptida ON posts(thread, id ASC);
-CREATE INDEX ptida2 ON posts(path, id DESC);
+
 CREATE INDEX parent_tree_index
     ON posts ((path[1]), path DESC, id);
-
 CREATE INDEX parent_tree_index2
+    ON posts ((path[1]), path ASC, id);
+CREATE INDEX parent_tree_index3
     ON posts (id, (path[1]));
 
 CREATE UNLOGGED TABLE votes (
