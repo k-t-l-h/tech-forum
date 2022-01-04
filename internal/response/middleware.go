@@ -1,9 +1,11 @@
 package response
 
 import (
-	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"net/http"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Response struct {
 	Status int         `json:"status"`

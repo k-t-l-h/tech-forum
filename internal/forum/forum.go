@@ -5,10 +5,13 @@ import (
 	"forum/internal/models"
 	"forum/internal/response"
 	"github.com/gorilla/mux"
-	"github.com/mailru/easyjson"
+	jsoniter "github.com/json-iterator/go"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Handler struct {
 	r *database.Repo
@@ -21,7 +24,8 @@ func NewHandler(r *database.Repo) *Handler {
 func (h *Handler) CreateForum(writer http.ResponseWriter, request *http.Request) {
 	var f models.Forum
 
-	jsonerr := easyjson.UnmarshalFromReader(request.Body, &f)
+	bt, _ := ioutil.ReadAll(request.Body)
+	jsonerr := json.Unmarshal(bt, &f)
 
 	if jsonerr != nil {
 		log.Fatalln(jsonerr)
@@ -31,18 +35,11 @@ func (h *Handler) CreateForum(writer http.ResponseWriter, request *http.Request)
 
 	switch err {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusCreated)
-		easyjson.MarshalToHTTPResponseWriter(forums, writer)
+		response.Respond(writer, http.StatusCreated, forums)
 	case models.UserNotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
-
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	case models.ForumConflict:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusConflict)
-		easyjson.MarshalToHTTPResponseWriter(forums, writer)
+		response.Respond(writer, http.StatusConflict, forums)
 	}
 }
 
@@ -52,8 +49,8 @@ func (h *Handler) CreateSlug(writer http.ResponseWriter, request *http.Request) 
 	var t models.Thread
 	t.Forum = slug
 
-	jsonerr := easyjson.UnmarshalFromReader(request.Body, &t)
-
+	bt, _ := ioutil.ReadAll(request.Body)
+	jsonerr := json.Unmarshal(bt, &t)
 	if jsonerr != nil {
 		panic(jsonerr)
 	}
@@ -62,24 +59,18 @@ func (h *Handler) CreateSlug(writer http.ResponseWriter, request *http.Request) 
 
 	switch err {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusCreated)
-		easyjson.MarshalToHTTPResponseWriter(th, writer)
+
+		response.Respond(writer, http.StatusCreated, th)
 
 	case models.UserNotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 
 	case models.ForumConflict:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusConflict)
-		easyjson.MarshalToHTTPResponseWriter(th, writer)
+		response.Respond(writer, http.StatusConflict, th)
 
 	default:
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusTeapot)
-		easyjson.MarshalToHTTPResponseWriter(th, nil)
 	}
 
 }
@@ -95,14 +86,9 @@ func (h *Handler) SlugDetails(writer http.ResponseWriter, request *http.Request)
 
 	switch err {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(f, writer)
-
+		response.Respond(writer, http.StatusOK, f)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 
 }
@@ -141,9 +127,7 @@ func (h *Handler) SlugThreads(writer http.ResponseWriter, request *http.Request)
 	case models.OK:
 		response.Respond(writer, http.StatusOK, t)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 }
 

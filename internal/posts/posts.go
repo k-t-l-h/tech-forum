@@ -1,11 +1,12 @@
 package posts
 
 import (
+	"encoding/json"
 	"forum/internal/database"
 	"forum/internal/models"
 	"forum/internal/response"
 	"github.com/gorilla/mux"
-	"github.com/mailru/easyjson"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,7 +34,8 @@ func (h *Handler) PostDetails(writer http.ResponseWriter, request *http.Request)
 	id, _ := strconv.Atoi(ids)
 
 	pu := models.PostFull{}
-	easyjson.UnmarshalFromReader(request.Body, &pu)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &pu)
 
 	pu.Post.Id = id
 	res, status := h.r.GetPost(pu, related)
@@ -42,9 +44,7 @@ func (h *Handler) PostDetails(writer http.ResponseWriter, request *http.Request)
 	case models.OK:
 		response.Respond(writer, http.StatusOK, res)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 }
 
@@ -54,7 +54,9 @@ func (h *Handler) PostUpdateDetails(writer http.ResponseWriter, request *http.Re
 	ids := vars["id"]
 
 	pu := models.PostUpdate{}
-	easyjson.UnmarshalFromReader(request.Body, &pu)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &pu)
+
 	id, err := strconv.Atoi(ids)
 
 	if err == nil {
@@ -66,9 +68,7 @@ func (h *Handler) PostUpdateDetails(writer http.ResponseWriter, request *http.Re
 	case models.OK:
 		response.Respond(writer, http.StatusOK, up)
 	default:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 
 	}
 

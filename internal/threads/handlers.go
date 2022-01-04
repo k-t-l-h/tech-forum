@@ -6,7 +6,7 @@ import (
 	"forum/internal/models"
 	"forum/internal/response"
 	"github.com/gorilla/mux"
-	"github.com/mailru/easyjson"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -34,14 +34,9 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	case models.OK:
 		response.Respond(writer, http.StatusCreated, posts)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
-
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	case models.ForumConflict:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusConflict)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusConflict, models.Error{Message: "User not found"})
 	}
 }
 
@@ -50,19 +45,17 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	slug := vars["slug_or_id"]
 
 	var t models.Thread
-	easyjson.UnmarshalFromReader(request.Body, &t)
+
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &t)
 
 	tr, status := h.r.ThreadUpdate(slug, t)
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(tr, writer)
+		response.Respond(writer, http.StatusOK, tr)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 
 }
@@ -73,19 +66,16 @@ func (h *Handler) UpdateID(writer http.ResponseWriter, request *http.Request) {
 	id, _ := strconv.Atoi(slug)
 
 	var t models.Thread
-	easyjson.UnmarshalFromReader(request.Body, &t)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &t)
 
 	tr, status := h.r.ThreadUpdateID(id, t)
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(tr, writer)
+		response.Respond(writer, http.StatusOK, tr)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 
 }
@@ -95,18 +85,16 @@ func (h *Handler) Vote(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	slug := vars["slug_or_id"]
 	vote := models.Vote{}
-	easyjson.UnmarshalFromReader(request.Body, &vote)
+
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &vote)
 	thread, status := h.r.ThreadVote(slug, vote)
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(thread, writer)
+		response.Respond(writer, http.StatusOK, thread)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 
 	}
 }
@@ -119,19 +107,16 @@ func (h *Handler) VoteID(writer http.ResponseWriter, request *http.Request) {
 
 	id, _ := strconv.Atoi(slug)
 
-	easyjson.UnmarshalFromReader(request.Body, &vote)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &vote)
 	thread, status := h.r.ThreadVoteID(id, vote)
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(thread, writer)
+		response.Respond(writer, http.StatusOK, thread)
 
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 
 	}
 }
@@ -187,7 +172,8 @@ func (h *Handler) Details(writer http.ResponseWriter, request *http.Request) {
 	slug := vars["slug_or_id"]
 
 	var t models.Thread
-	easyjson.UnmarshalFromReader(request.Body, &t)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &t)
 	t.Slug = slug
 
 	thread, status := h.r.GetThreadBySlug(slug, t)
@@ -209,7 +195,8 @@ func (h *Handler) DetailsID(writer http.ResponseWriter, request *http.Request) {
 	id, _ := strconv.Atoi(slug)
 
 	var t models.Thread
-	easyjson.UnmarshalFromReader(request.Body, &t)
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &t)
 	t.Id = id
 
 	thread, status := h.r.GetThreadByID(id, t)

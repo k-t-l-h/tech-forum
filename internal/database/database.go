@@ -238,7 +238,8 @@ func (r *Repo) GetForumUsers(forum models.Forum, limit, since, desc string) ([]m
 		row, err = r.db.Query(context.Background(), query, forum.Slug, since, limit)
 	}
 
-	if err != nil{}
+	if err != nil {
+	}
 	defer row.Close()
 
 	for row.Next() {

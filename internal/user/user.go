@@ -6,7 +6,7 @@ import (
 	"forum/internal/models"
 	"forum/internal/response"
 	"github.com/gorilla/mux"
-	"github.com/mailru/easyjson"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -34,9 +34,7 @@ func (h Handler) Create(writer http.ResponseWriter, request *http.Request) {
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusCreated)
-		easyjson.MarshalToHTTPResponseWriter(user[0], writer)
+		response.Respond(writer, http.StatusCreated, user[0])
 	case models.ForumConflict:
 		response.Respond(writer, http.StatusConflict, user)
 
@@ -49,7 +47,9 @@ func (h Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	name := vars["nickname"]
 
 	var p models.User
-	easyjson.UnmarshalFromReader(request.Body, &p)
+
+	bt, _ := ioutil.ReadAll(request.Body)
+	json.Unmarshal(bt, &p)
 
 	p.NickName = name
 
@@ -59,13 +59,9 @@ func (h Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	case models.OK:
 		response.Respond(writer, http.StatusOK, u)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	case models.ForumConflict:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusConflict)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusConflict, models.Error{Message: "User not found"})
 	}
 }
 
@@ -81,12 +77,8 @@ func (h Handler) Details(writer http.ResponseWriter, request *http.Request) {
 
 	switch status {
 	case models.OK:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		easyjson.MarshalToHTTPResponseWriter(u, writer)
+		response.Respond(writer, http.StatusOK, u)
 	case models.NotFound:
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusNotFound)
-		easyjson.MarshalToHTTPResponseWriter(models.Error{Message: "User not found"}, writer)
+		response.Respond(writer, http.StatusNotFound, models.Error{Message: "User not found"})
 	}
 }
