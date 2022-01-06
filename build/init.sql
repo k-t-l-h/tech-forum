@@ -3,12 +3,13 @@ CREATE EXTENSION IF NOT EXISTS citext;
 CREATE TABLE users(
     email citext UNIQUE NOT NULL,
     fullname varchar NOT NULL,
-    nickname citext COLLATE ucs_basic UNIQUE PRIMARY KEY,
+    nickname citext COLLATE "C" UNIQUE PRIMARY KEY,
     about text NOT NULL DEFAULT ''
 );
 --оставить оба.
-CREATE INDEX users_email ON users(email); --ускорили вставку постов
-CREATE INDEX users_email ON users(email, nickname);  --ускорили вставку постов
+CREATE unique INDEX users_nickname ON users(nickname);  --тест
+CREATE unique INDEX users_email ON users(email); --ускорили вставку постов
+CREATE INDEX users_full ON users(email, nickname);  --ускорили вставку постов
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
@@ -17,15 +18,16 @@ CREATE UNLOGGED TABLE forums (
     posts int DEFAULT 0,
     threads int DEFAULT 0
 );
-CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
+CREATE unique INDEX forums_slug ON forums(slug);
+--CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
 
 CREATE UNLOGGED TABLE forum_users (
-    nickname citext references users(nickname),
+    nickname citext  collate "C" references users(nickname),
     forum citext references forums(slug),
     CONSTRAINT fk UNIQUE(nickname, forum)
 );
-CREATE INDEX fu_nickname ON forum_users(nickname);
-CREATE INDEX fu_forum ON forum_users(forum);
+--CREATE INDEX fu_nickname ON forum_users USING hash(nickname);
+--CREATE INDEX fu_forum ON forum_users(forum);
 CREATE INDEX fu_full ON forum_users(nickname,forum);
 
 CREATE UNLOGGED TABLE threads (
@@ -38,6 +40,9 @@ CREATE UNLOGGED TABLE threads (
     slug citext,
     votes int
 );
+
+CREATE INDEX IF NOT EXISTS threads_slug ON threads USING hash(slug); --тест
+CREATE INDEX IF NOT EXISTS threads_id ON threads USING hash(id); --тест
 CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum); --не убирать
 CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
 CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
@@ -54,7 +59,9 @@ CREATE UNLOGGED TABLE posts (
     thread int references threads(id),
     path  INTEGER[]
 );
-
+CREATE INDEX IF NOT EXISTS posts_id ON posts thread, created_at, id, parent, path);
+/*
+CREATE INDEX IF NOT EXISTS posts_id ON posts USING hash(id); --тест
 CREATE INDEX IF NOT EXISTS posts_thread ON posts(thread); --не убирать
 CREATE INDEX pdesc ON posts(thread, path DESC);
 CREATE INDEX pasc ON posts(thread, path ASC);
@@ -68,6 +75,8 @@ CREATE INDEX parent_tree_index2
 CREATE INDEX parent_tree_index3
     ON posts (id, (path[1]) ASC);
 CREATE INDEX parent_tree_index4 ON posts (id, (path[1]) DESC);
+
+ */
 
 CREATE UNLOGGED TABLE votes (
     author citext references users(nickname),
@@ -95,3 +104,6 @@ CREATE TRIGGER path_update_trigger
     ON posts
     FOR EACH ROW
     EXECUTE PROCEDURE update_path();
+
+VACUUM;
+VACUUM ANALYSE;
