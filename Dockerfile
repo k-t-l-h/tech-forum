@@ -2,7 +2,7 @@ FROM golang:1.17 AS build
 
 ADD . /opt/app
 WORKDIR /opt/app
-RUN go build ./cmd/main.go
+RUN go build ./fastcmd/main.go
 
 FROM ubuntu:20.04
 
