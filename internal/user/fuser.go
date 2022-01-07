@@ -17,7 +17,7 @@ func NewFastHandler(r *database.Repo) *FastHandler {
 	return &FastHandler{r: r}
 }
 
-func (fh FastHandler) Create(ctx *routing.Context) error{
+func (fh FastHandler) Create(ctx *routing.Context) error {
 
 	name := ctx.Param("nickname")
 
@@ -26,8 +26,6 @@ func (fh FastHandler) Create(ctx *routing.Context) error{
 	u.NickName = name
 
 	user, status := fh.r.CreateUser(u)
-
-
 
 	switch status {
 	case models.OK:
@@ -50,7 +48,7 @@ func (fh FastHandler) Create(ctx *routing.Context) error{
 	return nil
 }
 
-func (fh FastHandler) Update(ctx *routing.Context) error{
+func (fh FastHandler) Update(ctx *routing.Context) error {
 	name := ctx.Param("nickname")
 
 	var p models.User
@@ -80,7 +78,7 @@ func (fh FastHandler) Update(ctx *routing.Context) error{
 }
 
 //GET /user/{nickname}/profile
-func (fh FastHandler) Details(ctx *routing.Context)error {
+func (fh FastHandler) Details(ctx *routing.Context) error {
 	name := ctx.Param("nickname")
 
 	us := models.User{}
@@ -107,4 +105,3 @@ func (fh FastHandler) Details(ctx *routing.Context)error {
 	}
 	return nil
 }
-

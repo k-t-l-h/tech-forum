@@ -21,7 +21,6 @@ type fastService struct {
 
 func main() {
 
-
 	//conn := "postgres://postgres:password@127.0.0.1:5432/db4?pool_max_conns=1000"
 	conn := "postgres://docker:docker@127.0.0.1:5432/docker?pool_max_conns=1000"
 

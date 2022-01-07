@@ -227,7 +227,10 @@ func (r *Repo) ThreadVoteID(check int, vote models.Vote) (models.Thread, int) {
 	}
 	vote.NickName = user.NickName
 
-	thread, _ := r.GetThreadByID(check, models.Thread{})
+	thread, code := r.GetThreadByID(check, models.Thread{})
+	if code != models.OK {
+		return models.Thread{}, models.NotFound
+	}
 
 	query := `INSERT INTO VOTES (author, vote, thread) VALUES ($1, $2, $3)`
 	value := 0

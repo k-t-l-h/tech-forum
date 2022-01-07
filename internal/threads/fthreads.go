@@ -18,10 +18,8 @@ func NewFastHandler(r *database.Repo) *FastHandler {
 	return &FastHandler{r: r}
 }
 
-
-
 //POST // /thread/{slug_or_id}/create
-func (fh FastHandler) Create(ctx *routing.Context) error{
+func (fh FastHandler) Create(ctx *routing.Context) error {
 
 	slug := ctx.Param("slug_or_id")
 	id, err := strconv.Atoi(slug)
@@ -35,7 +33,6 @@ func (fh FastHandler) Create(ctx *routing.Context) error{
 	} else {
 		posts, status = fh.r.CreateThreadPost(slug, posts)
 	}
-
 
 	switch status {
 	case models.OK:
@@ -58,18 +55,17 @@ func (fh FastHandler) Create(ctx *routing.Context) error{
 	return nil
 }
 
-func (fh FastHandler) Update(ctx *routing.Context) error{
+func (fh FastHandler) Update(ctx *routing.Context) error {
 	slug := ctx.Param("slug_or_id")
 	id, err := strconv.Atoi(slug)
 	status := 0
-
 
 	var t, tr models.Thread
 	json.Unmarshal(ctx.PostBody(), &t)
 
 	if err == nil {
 		tr, status = fh.r.ThreadUpdateID(id, t)
-	}else {
+	} else {
 		tr, status = fh.r.ThreadUpdate(slug, t)
 	}
 
@@ -90,12 +86,10 @@ func (fh FastHandler) Update(ctx *routing.Context) error{
 }
 
 ///thread/{slug_or_id}/vote
-func (fh FastHandler) Vote(ctx *routing.Context) error{
+func (fh FastHandler) Vote(ctx *routing.Context) error {
 	slug := ctx.Param("slug_or_id")
 	id, err := strconv.Atoi(slug)
 	status := 0
-
-
 
 	vote := models.Vote{}
 	thread := models.Thread{}
@@ -105,7 +99,6 @@ func (fh FastHandler) Vote(ctx *routing.Context) error{
 	} else {
 		thread, status = fh.r.ThreadVote(slug, vote)
 	}
-
 
 	switch status {
 	case models.OK:
@@ -125,7 +118,7 @@ func (fh FastHandler) Vote(ctx *routing.Context) error{
 
 ///thread/{slug_or_id}/vote
 
-func (fh FastHandler) Posts(ctx *routing.Context) error{
+func (fh FastHandler) Posts(ctx *routing.Context) error {
 
 	Ps := []models.Post{}
 	slug := ctx.Param("slug_or_id")
@@ -158,7 +151,6 @@ func (fh FastHandler) Posts(ctx *routing.Context) error{
 		sort = sorts[0]
 	}
 
-
 	if err == nil {
 		Ps, status = fh.r.GetThreadsPostsID(limit, since, desc, sort, id)
 	} else {
@@ -182,7 +174,7 @@ func (fh FastHandler) Posts(ctx *routing.Context) error{
 }
 
 ///thread/{slug_or_id}/details
-func (fh FastHandler) Details(ctx *routing.Context) error{
+func (fh FastHandler) Details(ctx *routing.Context) error {
 	slug := ctx.Param("slug_or_id")
 	id, err := strconv.Atoi(slug)
 	status := 0
@@ -212,4 +204,3 @@ func (fh FastHandler) Details(ctx *routing.Context) error{
 
 	return nil
 }
-

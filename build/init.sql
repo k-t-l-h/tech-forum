@@ -9,7 +9,7 @@ CREATE TABLE users(
 --оставить оба.
 CREATE unique INDEX users_nickname ON users(nickname);  --тест
 CREATE unique INDEX users_email ON users(email); --ускорили вставку постов
---CREATE INDEX users_full ON users(email, nickname);  --ускорили вставку постов
+CREATE INDEX users_full ON users(email, nickname);  --ускорили вставку постов
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
@@ -41,8 +41,8 @@ CREATE UNLOGGED TABLE threads (
     votes int
 );
 
---CREATE INDEX IF NOT EXISTS threads_slug ON threads USING hash(slug); --тест
---CREATE INDEX IF NOT EXISTS threads_id ON threads USING hash(id); --тест
+CREATE INDEX IF NOT EXISTS threads_slug ON threads(slug); --тест
+CREATE INDEX IF NOT EXISTS threads_id ON threads(id); --тест
 CREATE INDEX IF NOT EXISTS threads_forum ON threads(forum); --не убирать
 CREATE INDEX IF NOT EXISTS created_forum_index ON threads(forum, created_at);
 CREATE INDEX  IF NOT EXISTS cluster_thread ON threads(id, forum); --ускоряет
