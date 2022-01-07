@@ -53,6 +53,12 @@ func (r *Repo) CreateThreadPost(check string, posts []models.Post) ([]models.Pos
 			}
 		}
 
+		_, code := r.CheckUser(models.User{NickName: p.Author})
+		if code != models.OK {
+			tx.Rollback(context.Background())
+			return []models.Post{}, models.NotFound
+		}
+
 		err = tx.QueryRow(context.Background(), ins.Name, p.Author,
 			p.Message, times, thread.Forum, false, p.Parent, thread.Id, []int{}).Scan(&p.Id)
 
@@ -290,6 +296,12 @@ func (r *Repo) CreateThreadPostID(id int, posts []models.Post) ([]models.Post, i
 			if err != nil || old != p.Thread {
 				return []models.Post{}, models.ForumConflict
 			}
+		}
+
+		_, code := r.CheckUser(models.User{NickName: p.Author})
+		if code != models.OK {
+			tx.Rollback(context.Background())
+			return []models.Post{}, models.NotFound
 		}
 
 		err = tx.QueryRow(context.Background(), ins.Name, p.Author, p.Message, times, thread.Forum, false, p.Parent, thread.Id, []int{}).Scan(&p.Id)

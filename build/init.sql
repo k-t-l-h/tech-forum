@@ -13,7 +13,7 @@ CREATE unique INDEX users_email ON users(email); --ускорили вставк
 
 CREATE UNLOGGED TABLE forums (
     title varchar NOT NULL,
-    author citext references users(nickname),
+    author citext COLLATE "C" ,
     slug citext PRIMARY KEY,
     posts int DEFAULT 0,
     threads int DEFAULT 0
@@ -22,8 +22,8 @@ CREATE unique INDEX forums_slug ON forums(slug);
 CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
 
 CREATE UNLOGGED TABLE forum_users (
-    nickname citext  collate "C" references users(nickname),
-    forum citext references forums(slug),
+    nickname citext  collate "C",
+    forum citext COLLATE "C" ,
     CONSTRAINT fk UNIQUE(nickname, forum)
 );
 --CREATE INDEX fu_nickname ON forum_users USING hash(nickname);
@@ -32,11 +32,11 @@ CREATE INDEX fu_full ON forum_users(nickname,forum);
 
 CREATE UNLOGGED TABLE threads (
     id serial PRIMARY KEY,
-    author citext references users(nickname),
+    author  citext COLLATE "C" ,
     message citext NOT NULL,
     title citext NOT NULL,
     created_at timestamp with time zone,
-    forum citext references forums(slug),
+    forum  citext COLLATE "C" ,
     slug citext,
     votes int
 );
@@ -72,9 +72,9 @@ CREATE INDEX parent_tree_index4 ON posts (id, (path[1]));
 
 
 CREATE UNLOGGED TABLE votes (
-    author citext references users(nickname),
+    author citext COLLATE "C",
     vote int,
-    thread int references threads(id),
+    thread int,
     CONSTRAINT checks UNIQUE(author, thread)
 );
 CREATE INDEX votes_full ON votes(author, vote, thread);

@@ -67,9 +67,7 @@ func (r *Repo) GetUser(user models.User) (models.User, int) {
 
 func (r *Repo) CheckUser(user models.User) (models.User, int) {
 	result := models.User{}
-	query := `SELECT nickname
-	FROM users
-	WHERE nickname =  $1`
+	query := `SELECT nickname FROM users WHERE nickname =  $1`
 
 	rows := r.db.QueryRow(context.Background(), query, user.NickName)
 
