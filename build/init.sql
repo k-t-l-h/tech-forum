@@ -19,7 +19,7 @@ CREATE UNLOGGED TABLE forums (
     threads int DEFAULT 0
 );
 CREATE unique INDEX forums_slug ON forums(slug);
-CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
+--CREATE INDEX forums_users ON forums(author); --замедлило вставку постов, ускорило всё остальное
 
 CREATE UNLOGGED TABLE forum_users (
     nickname citext  collate "C",
@@ -61,7 +61,7 @@ CREATE UNLOGGED TABLE posts (
 );
 CREATE INDEX IF NOT EXISTS posts_thread ON posts(thread); --не убирать
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
-CREATE INDEX parent_tree_index ON posts ((path[1]), path, id);
+--CREATE INDEX parent_tree_index ON posts ((path[1]), path, id);
 /*
 CREATE INDEX IF NOT EXISTS posts_id ON posts thread, created_at, id, parent, path);
 CREATE INDEX pdesc ON posts(thread, path);
