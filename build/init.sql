@@ -61,7 +61,7 @@ CREATE UNLOGGED TABLE posts (
 );
 CREATE INDEX IF NOT EXISTS posts_thread ON posts(thread); --не убирать
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
---CREATE INDEX parent_tree_index ON posts ((path[1]), path, id);
+CREATE INDEX parent_tree_index ON posts ((path[1]), path, id);
 /*
 CREATE INDEX IF NOT EXISTS posts_id ON posts thread, created_at, id, parent, path);
 CREATE INDEX pdesc ON posts(thread, path);
