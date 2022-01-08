@@ -26,7 +26,7 @@ CREATE UNLOGGED TABLE forum_users (
     forum citext COLLATE "C" ,
     CONSTRAINT fk UNIQUE(nickname, forum)
 );
---CREATE INDEX fu_nickname ON forum_users USING hash(nickname);
+
 CREATE INDEX fu_forum ON forum_users(forum);
 CREATE INDEX fu_full ON forum_users(nickname,forum);
 
@@ -61,15 +61,8 @@ CREATE UNLOGGED TABLE posts (
 );
 CREATE INDEX IF NOT EXISTS posts_thread ON posts(thread); --не убирать
 CREATE INDEX IF NOT EXISTS posts_parent_thread_index ON posts(parent, thread);
-CREATE INDEX parent_tree_index ON posts ((path[1]), path, id);
-/*
-CREATE INDEX IF NOT EXISTS posts_id ON posts thread, created_at, id, parent, path);
-CREATE INDEX pdesc ON posts(thread, path);
-CREATE INDEX ptida ON posts(thread, id);
-
-CREATE INDEX parent_tree_index4 ON posts (id, (path[1]));
- */
-
+CREATE INDEX IF NOT EXISTS  parent_tree_index ON posts ((path[1]), path, id);
+CREATE unique INDEX IF NOT EXISTS posts_id ON posts(id);
 
 CREATE UNLOGGED TABLE votes (
     author citext COLLATE "C",
